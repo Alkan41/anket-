@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -7,10 +8,20 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-      .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
-      .scrollbar-hide::-webkit-scrollbar { display: none; }
-      body { background-color: #f0fdf4; } /* Açık Yeşil Arka Plan */
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fadeIn {
+        animation: fadeIn 0.4s ease-out forwards;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
     </style>
     <script type="importmap">
 {
@@ -24,14 +35,14 @@
 }
 </script>
 </head>
-<body class="text-gray-800 min-h-screen font-sans selection:bg-green-200">
+<body class="bg-green-50 text-gray-800 min-h-screen font-sans selection:bg-green-200">
     <div id="root"></div>
 
     <script type="module">
         import React, { useState, useEffect, useMemo, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
 
-        // --- YAPILANDIRMA ---
+        // --- CONSTANTS & CONFIG ---
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaD2pCO5hy1TW0E4-iWdfkICMIcRmCtlOsL6dHmvnvYY2VwPnGtYqfXaHnV1G6R9R_/exec";
         const ADMIN_PASSWORD = "1839";
 
@@ -43,10 +54,10 @@
           { label: "C-650", id_suffix: "c650" }
         ];
 
-        // İstediğiniz katsayı dağılımı (a:15, b:5, c:5, ç:5)
         const INITIAL_QUESTIONS = [
           {
-            id: 1, text: "Hava araçlarımızın bakımlarında uçuş teknisyenlerimizin iş yoğunluğu ağırlığı nedir?",
+            id: 1,
+            text: "Hava araçlarımızın bakımlarında uçuş teknisyenlerimizin iş yoğunluğu ağırlığı nedir?",
             sections: [
               { id: "1a", label: "a", title: "Periyodik Bakım", sectionWeight: 15, items: AIRCRAFTS.map(a => ({ id: `1a_${a.id_suffix}`, label: a.label })) },
               { id: "1b", label: "b", title: "Günlük Bakım", sectionWeight: 5, items: AIRCRAFTS.map(a => ({ id: `1b_${a.id_suffix}`, label: a.label })) },
@@ -55,7 +66,8 @@
             ]
           },
           {
-            id: 2, text: "Personelin uçuş faaliyetlerinin hazırlık ve icrasına katılım yoğunluğu nedir?",
+            id: 2,
+            text: "Personelin uçuş faaliyetlerinin hazırlık ve icrasına katılım yoğunluğu nedir?",
             sections: [
               { id: "2a", label: "a", title: "Yangın Söndürme Operasyonları", sectionWeight: 10, items: AIRCRAFTS.map(a => ({ id: `2a_${a.id_suffix}`, label: a.label })) },
               { id: "2b", label: "b", title: "VIP Komuta Kontrol Uçuşları", sectionWeight: 5, items: AIRCRAFTS.map(a => ({ id: `2b_${a.id_suffix}`, label: a.label })) },
@@ -64,51 +76,89 @@
             ]
           },
           {
-            id: 3, text: "Personelin ikamet ettiği yeri dışında görev yapma yoğunluğu nedir?",
+            id: 3,
+            text: "Personelin ikamet ettiği yeri dışında görev yapma yoğunluğu nedir?",
             sections: [
               { id: "3a", label: "a", title: "Yaz Dönemi", sectionWeight: 15, items: AIRCRAFTS.map(a => ({ id: `3a_${a.id_suffix}`, label: a.label })) },
               { id: "3b", label: "b", title: "Kış Dönemi", sectionWeight: 5, items: AIRCRAFTS.map(a => ({ id: `3b_${a.id_suffix}`, label: a.label })) }
             ]
           },
           {
-            id: 4, text: "Personelin uçuşa hazır bekleme faaliyetlerinin yoğunluğu nedir?",
+            id: 4,
+            text: "Personelin uçuşa hazır bekleme faaliyetlerinin yoğunluğu nedir?",
             sections: [
               { id: "4a", label: "a", title: "Bekleme Faaliyetleri", sectionWeight: 10, items: AIRCRAFTS.map(a => ({ id: `4a_${a.id_suffix}`, label: a.label })) }
             ]
           },
           {
-            id: 5, text: "Personelin idari faaliyet yoğunluğu nedir?",
+            id: 5,
+            text: "Personelin idari faaliyet yoğunluğu nedir?",
             sections: [
-              { id: "5a", label: "a", title: "İkmal Faaliyetleri", sectionWeight: 8, items: AIRCRAFTS.map(a => ({ id: `5a_${a.id_suffix}`, label: a.label })) },
+              { id: "5a", label: "a", title: "İkmal Faaliyetleri ve Destek Teçhizatı Bakımı", sectionWeight: 8, items: AIRCRAFTS.map(a => ({ id: `5a_${a.id_suffix}`, label: a.label })) },
               { id: "5b", label: "b", title: "Sicil Takip ve Planlama", sectionWeight: 7, items: AIRCRAFTS.map(a => ({ id: `5b_${a.id_suffix}`, label: a.label })) }
             ]
           }
         ];
 
-        // --- BULUT SERVİSİ ---
+        const INITIAL_DATA = {
+          welcomeText: "Uçuş Teknisyenleri İş Yoğunluğu Anketine Hoş Geldiniz.\n\nLütfen her bir kategori için ilgili hava aracına yönelik yoğunluk puanınızı 1 (En Düşük) ile 5 (En Yüksek) arasında giriniz.",
+          questions: INITIAL_QUESTIONS,
+          personnel: [],
+          responses: []
+        };
+
+        // --- CLOUD SERVICE ---
         const CloudService = {
           async fetchData() {
-            try { const r = await fetch(SCRIPT_URL); return await r.json(); }
-            catch (e) { console.error(e); return null; }
+            try {
+              const response = await fetch(SCRIPT_URL);
+              return await response.json();
+            } catch (error) {
+              console.error("Veri çekme hatası:", error);
+              return null;
+            }
           },
-          async saveResponse(data) { return this.post({ action: "addResponse", data }); },
-          async updatePersonnel(data) { return this.post({ action: "updatePersonnel", data }); },
-          async updateConfig(text) { return this.post({ action: "updateConfig", data: { welcomeText: text } }); },
-          async updateWeights(weights) { return this.post({ action: "updateWeights", data: weights }); },
+          async saveResponse(responseData) {
+            return this.post({ action: "addResponse", data: responseData });
+          },
+          async updatePersonnel(personnelList) {
+            return this.post({ action: "updatePersonnel", data: personnelList });
+          },
+          async updateConfig(welcomeText) {
+            return this.post({ action: "updateConfig", data: { welcomeText } });
+          },
+          async updateWeights(weights) {
+            return this.post({ action: "updateWeights", data: weights });
+          },
           async post(payload) {
-            try { await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); }
-            catch (e) { console.error(e); }
+            try {
+              await fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+              });
+            } catch (error) {
+              console.error("Veri gönderme hatası:", error);
+            }
           }
         };
 
-        // --- BİLEŞENLER ---
+        // --- COMPONENTS ---
 
         const WelcomeView = ({ text, onStart }) => (
-          <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-t-[12px] border-green-600 text-center animate-fadeIn max-w-2xl mx-auto mt-20">
-            <i className="fas fa-info-circle text-green-600 text-6xl mb-6"></i>
-            <h2 className="text-3xl font-black text-gray-800 mb-6 uppercase tracking-tighter">BİLGİLENDİRME</h2>
-            <div className="text-gray-600 mb-10 whitespace-pre-wrap font-bold leading-relaxed text-xl">{text}</div>
-            <button onClick={onStart} className="bg-green-600 text-white px-20 py-6 rounded-3xl font-black text-3xl hover:bg-green-700 transition-all shadow-2xl transform hover:scale-105 active:scale-95 uppercase">BAŞLA</button>
+          <div className="bg-white p-8 rounded-xl shadow-lg border-t-4 border-green-600 text-center animate-fadeIn">
+            <i className="fas fa-info-circle text-green-600 text-5xl mb-4"></i>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 uppercase tracking-tighter">Bilgilendirme</h2>
+            <div className="prose max-w-none text-gray-600 mb-8 whitespace-pre-wrap font-medium">
+              {text}
+            </div>
+            <button
+              onClick={onStart}
+              className="bg-green-600 text-white px-10 py-3 rounded-full font-black text-lg hover:bg-green-700 transition-all shadow-md transform hover:scale-105 uppercase"
+            >
+              Başla
+            </button>
           </div>
         );
 
@@ -120,71 +170,125 @@
           const [ratings, setRatings] = useState({});
           const dropdownRef = useRef(null);
 
+          const handleRatingSelect = (itemId, value) => {
+            setRatings(prev => ({ ...prev, [itemId]: value }));
+          };
+
           const isStepComplete = () => {
             if (step === 0) return selectedPerson !== '';
-            const q = questions[step - 1];
-            return q.sections.flatMap(s => s.items.map(i => i.id)).every(id => ratings[id] !== undefined);
+            const currentQuestion = questions[step - 1];
+            const itemIds = currentQuestion.sections.flatMap(s => s.items.map(i => i.id));
+            return itemIds.every(id => ratings[id] !== undefined);
           };
 
           const handleNext = () => {
-            if (!isStepComplete()) return alert("Lütfen boş alan bırakmayınız.");
-            if (step < questions.length) { setStep(step + 1); window.scrollTo(0,0); }
-            else {
-              let total = 0;
-              questions.forEach(q => q.sections.forEach(s => {
-                const avg = s.items.reduce((sum, i) => sum + (ratings[i.id] || 0), 0) / s.items.length;
-                total += avg * s.sectionWeight;
-              }));
-              onSave({ id: crypto.randomUUID(), timestamp: new Date().toLocaleString('tr-TR'), personnelName: selectedPerson, scores: ratings, totalScore: Math.round(total) });
+            if (isStepComplete()) {
+              if (step < questions.length) {
+                setStep(step + 1);
+                window.scrollTo(0, 0);
+              } else {
+                handleSubmit();
+              }
+            } else {
+              alert(step === 0 ? 'Lütfen personel seçiniz.' : 'Lütfen tüm alanları puanlayınız.');
             }
           };
 
-          const filtered = personnel.filter(p => p.toLowerCase().includes(searchTerm.toLowerCase()));
+          const handleSubmit = () => {
+            let totalScore = 0;
+            questions.forEach(q => {
+              q.sections.forEach(s => {
+                const sumRatings = s.items.reduce((sum, item) => sum + (ratings[item.id] || 0), 0);
+                const avgRating = sumRatings / s.items.length;
+                totalScore += avgRating * s.sectionWeight;
+              });
+            });
+
+            onSave({
+              id: crypto.randomUUID(),
+              timestamp: new Date().toLocaleString('tr-TR'),
+              personnelName: selectedPerson,
+              scores: ratings,
+              totalScore: Math.round(totalScore)
+            });
+          };
+
+          const filteredPersonnel = personnel.filter(p => 
+            p.toLowerCase().toLocaleLowerCase('tr-TR').includes(searchTerm.toLowerCase().toLocaleLowerCase('tr-TR'))
+          );
+
+          useEffect(() => {
+            const handleClickOutside = (event) => {
+              if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsDropdownOpen(false);
+            };
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+          }, []);
 
           return (
-            <div className="bg-white p-8 md:p-12 rounded-[3.5rem] shadow-2xl border border-gray-100 animate-fadeIn relative">
-              <div className="absolute top-0 left-0 w-full h-4 bg-gray-100">
-                <div className="h-full bg-green-600 transition-all duration-700" style={{ width: `${(step/questions.length)*100}%` }} />
+            <div className="bg-white p-6 md:p-12 rounded-[2.5rem] shadow-2xl border border-gray-100 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-3 bg-gray-100">
+                <div className="h-full bg-green-600 transition-all duration-700 ease-in-out" style={{ width: `${(step / questions.length) * 100}%` }} />
               </div>
-              <div className="pt-8 mb-12 border-b-2 border-gray-50 pb-6">
-                <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase">ANKET FORMU</h2>
+
+              <div className="pt-6 mb-12 flex justify-between items-end border-b-2 border-gray-50 pb-6">
+                <div>
+                  <h2 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">Anket Formu</h2>
+                  <p className="text-sm font-bold text-gray-400 mt-1 uppercase">Bölümleri sırayla doldurunuz</p>
+                </div>
               </div>
+
               <div className="min-h-[400px]">
                 {step === 0 ? (
-                  <div className="space-y-8 animate-fadeIn">
-                    <div className="bg-green-50 p-10 rounded-[3rem] border-2 border-green-200">
-                      <h3 className="text-2xl font-black text-green-800 mb-8 uppercase"><i className="fas fa-user mr-4"></i> Personel Seçimi</h3>
+                  <div className="space-y-6 animate-fadeIn">
+                    <div className="bg-green-50 p-8 rounded-3xl border-2 border-green-200 shadow-inner">
+                      <h3 className="text-xl font-black text-green-800 mb-6 flex items-center uppercase tracking-tight">
+                        <i className="fas fa-id-card mr-3"></i> Personel Kimlik Girişi
+                      </h3>
                       <div className="relative" ref={dropdownRef}>
-                        <input type="text" value={selectedPerson || searchTerm} onChange={(e)=>{setSearchTerm(e.target.value); setSelectedPerson(''); setIsDropdownOpen(true);}} onFocus={()=>setIsDropdownOpen(true)} placeholder="İsim yazın..." className="w-full p-6 border-2 border-green-300 rounded-[2rem] text-2xl font-black text-green-900 focus:ring-8 focus:ring-green-100 outline-none" />
-                        {isDropdownOpen && (searchTerm || filtered.length > 0) && (
-                          <div className="absolute z-50 w-full mt-4 bg-white border-2 border-green-100 rounded-[2.5rem] shadow-2xl max-h-72 overflow-y-auto">
-                            {filtered.length ? filtered.map(p => (
-                              <div key={p} onClick={()=>{setSelectedPerson(p); setSearchTerm(''); setIsDropdownOpen(false);}} className="p-6 hover:bg-green-50 cursor-pointer font-black text-gray-700 border-b last:border-0 flex justify-between items-center transition-colors"><span>{p}</span><i className="fas fa-check text-green-500 opacity-0 group-hover:opacity-100"></i></div>
-                            )) : <div className="p-6 text-gray-400 italic text-center">Sonuç bulunamadı</div>}
+                        <input 
+                          type="text"
+                          value={selectedPerson || searchTerm}
+                          onChange={(e) => { setSearchTerm(e.target.value); setSelectedPerson(''); setIsDropdownOpen(true); }}
+                          onFocus={() => setIsDropdownOpen(true)}
+                          placeholder="İsim yazmaya başlayın..."
+                          className="w-full p-5 border-2 border-green-300 rounded-2xl focus:ring-8 focus:ring-green-100 outline-none shadow-sm text-xl font-black text-green-900 bg-white"
+                        />
+                        {isDropdownOpen && (searchTerm || filteredPersonnel.length > 0) && (
+                          <div className="absolute z-50 w-full mt-2 bg-white border-2 border-green-100 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
+                            {filteredPersonnel.length > 0 ? filteredPersonnel.map(p => (
+                              <div key={p} onClick={() => { setSelectedPerson(p); setSearchTerm(''); setIsDropdownOpen(false); }} className="p-4 hover:bg-green-50 cursor-pointer font-bold text-gray-700 border-b last:border-0 flex justify-between group">
+                                <span>{p}</span><i className="fas fa-check text-green-500 opacity-0 group-hover:opacity-100"></i>
+                              </div>
+                            )) : <div className="p-4 text-gray-400 italic text-center">Eşleşen sonuç bulunamadı</div>}
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-12 animate-fadeIn">
-                    <div className="bg-green-900 text-white p-10 rounded-[2.5rem] shadow-xl">
-                      <div className="text-xs font-black opacity-50 mb-3 tracking-[0.4em]">SORU {step} / {questions.length}</div>
-                      <h3 className="text-2xl md:text-3xl font-black leading-tight uppercase tracking-tighter">{questions[step-1].text}</h3>
+                  <div className="space-y-8 animate-fadeIn">
+                    <div className="bg-green-800 text-white p-6 rounded-2xl shadow-xl">
+                      <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-2">BÖLÜM {step} / {questions.length}</div>
+                      <h3 className="text-xl md:text-2xl font-black leading-tight">{questions[step-1].text}</h3>
                     </div>
-                    {questions[step-1].sections.map(s => (
-                      <div key={s.id} className="bg-gray-50 p-8 rounded-[3rem] border border-gray-100 space-y-8">
-                        <h4 className="text-xl font-black text-gray-800 flex items-center border-b-2 border-green-200 pb-4 uppercase">
-                          <span className="bg-black text-white w-10 h-10 rounded-xl flex items-center justify-center mr-4 font-mono">{s.label}</span>
-                          {s.title}
+                    {questions[step-1].sections.map(section => (
+                      <div key={section.id} className="bg-gray-50/50 rounded-3xl p-6 border border-gray-100 space-y-6">
+                        <h4 className="text-lg font-black text-gray-800 flex items-center border-b-2 border-green-100 pb-3 uppercase">
+                          <span className="bg-black text-white w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm font-mono shadow-lg">{section.label}</span>
+                          {section.title}
                         </h4>
-                        <div className="grid grid-cols-1 gap-6">
-                          {s.items.map(item => (
-                            <div key={item.id} className="bg-white border-2 border-gray-100 rounded-[2rem] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 hover:border-green-400 transition-all shadow-sm">
-                              <span className="text-gray-900 font-black text-xl uppercase tracking-tighter">{item.label}</span>
-                              <div className="flex space-x-3">
-                                {[1,2,3,4,5].map(v => (
-                                  <button key={v} onClick={()=>setRatings(p=>({...p, [item.id]: v}))} className={`w-14 h-14 rounded-2xl border-2 font-black transition-all flex items-center justify-center text-xl ${ratings[item.id] === v ? 'bg-green-600 border-green-700 text-white scale-110 shadow-lg' : 'bg-white border-gray-100 text-gray-300 hover:border-green-400'}`}>{v}</button>
+                        <div className="grid grid-cols-1 gap-4">
+                          {section.items.map(item => (
+                            <div key={item.id} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 group">
+                              <span className="text-gray-900 font-black text-lg group-hover:text-green-700">{item.label}</span>
+                              <div className="flex space-x-2">
+                                {[1, 2, 3, 4, 5].map(val => (
+                                  <button key={val} type="button" onClick={() => handleRatingSelect(item.id, val)}
+                                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl border-2 font-black transition-all flex items-center justify-center ${ratings[item.id] === val ? 'bg-green-600 border-green-700 text-white scale-110' : 'bg-white border-gray-200 text-gray-300 hover:text-green-500 hover:border-green-400'}`}
+                                  >
+                                    {val}
+                                  </button>
                                 ))}
                               </div>
                             </div>
@@ -195,99 +299,122 @@
                   </div>
                 )}
               </div>
-              <div className="mt-20 flex justify-between items-center pt-10 border-t-2">
-                <button onClick={()=>(step > 0 ? setStep(step-1) : onCancel())} className="text-gray-400 font-black uppercase text-sm hover:text-red-500 flex items-center space-x-2"><i className="fas fa-arrow-left"></i><span>{step === 0 ? 'İPTAL' : 'GERİ'}</span></button>
-                <button onClick={handleNext} disabled={!isStepComplete()} className={`px-16 py-6 rounded-3xl font-black text-2xl flex items-center space-x-4 shadow-2xl transition-all ${isStepComplete() ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-                  <span>{step === questions.length ? 'BİTİR' : 'İLERİ'}</span><i className="fas fa-chevron-right"></i>
+
+              <div className="mt-16 flex items-center justify-between pt-10 border-t-2 border-gray-100">
+                <button type="button" onClick={() => (step > 0 ? setStep(step - 1) : onCancel())} className="flex items-center space-x-2 text-gray-400 font-black uppercase text-sm hover:text-red-500 transition-all">
+                  <i className="fas fa-arrow-left"></i><span>{step === 0 ? 'İptal Et' : 'Geri Dön'}</span>
+                </button>
+                <button type="button" onClick={handleNext} disabled={!isStepComplete()} className={`px-12 py-5 rounded-2xl font-black text-xl flex items-center space-x-4 shadow-2xl transition-all ${isStepComplete() ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+                  <span>{step === questions.length ? 'KAYDET' : 'İLERİ'}</span><i className={`fas ${step === questions.length ? 'fa-save' : 'fa-chevron-right'}`}></i>
                 </button>
               </div>
             </div>
           );
         };
 
-        const AdminPanel = ({ data, updateData, onLogout }) => {
-          const [tab, setTab] = useState('REPORTS');
-          const [pText, setPText] = useState('');
+        const AdminLogin = ({ onLoginSuccess, onCancel }) => {
+          const [password, setPassword] = useState('');
+          const [error, setError] = useState(false);
+          const handleSubmit = (e) => {
+            e.preventDefault();
+            if (password === ADMIN_PASSWORD) onLoginSuccess();
+            else { setError(true); setPassword(''); setTimeout(() => setError(false), 2000); }
+          };
+          return (
+            <div className="max-w-md mx-auto mt-20 animate-fadeIn">
+              <div className="bg-white p-8 rounded-3xl shadow-2xl border border-gray-100 text-center">
+                <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6"><i className="fas fa-lock text-3xl"></i></div>
+                <h2 className="text-2xl font-black text-gray-800 mb-8 uppercase tracking-tighter">Yönetim Girişi</h2>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Şifre" className={`w-full p-4 border-2 rounded-2xl text-center text-2xl tracking-[1em] outline-none transition-all ${error ? 'border-red-500 bg-red-50' : 'border-gray-100 focus:border-green-500'}`} autoFocus />
+                  <button type="submit" className="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-lg hover:bg-green-700 transition-all shadow-lg uppercase">Giriş Yap</button>
+                  <button type="button" onClick={onCancel} className="text-gray-400 font-bold text-sm hover:text-gray-600 uppercase">İptal</button>
+                </form>
+              </div>
+            </div>
+          );
+        };
 
-          const getRating = (res, sid, suffix) => res.scores[`${sid}_${suffix}`] || 0;
-          const calc = (res, suffix) => {
+        const AdminPanel = ({ data, updateData, onLogout }) => {
+          const [activeTab, setActiveTab] = useState('REPORTS');
+          const [personnelBulkText, setPersonnelBulkText] = useState('');
+
+          const getRating = (res, sectionId, aircraftSuffix) => res.scores[`${sectionId}_${aircraftSuffix}`] || 0;
+          const calculateScore = (res, suffix) => {
             let total = 0;
             data.questions.forEach(q => q.sections.forEach(s => { total += getRating(res, s.id, suffix) * s.sectionWeight; }));
             return Math.round(total);
           };
 
-          const maxS = useMemo(() => {
-            if (!data.responses.length) return 0;
-            let m = 0;
-            data.responses.forEach(res => AIRCRAFTS.forEach(air => { const s = calc(res, air.id_suffix); if(s > m) m = s; }));
-            return m;
+          const globalMaxScore = useMemo(() => {
+            if (data.responses.length === 0) return 0;
+            let max = 0;
+            data.responses.forEach(res => AIRCRAFTS.forEach(air => { const s = calculateScore(res, air.id_suffix); if (s > max) max = s; }));
+            return max;
           }, [data.responses, data.questions]);
 
-          const exportExcel = () => {
-            let h = `<html><head><meta charset="utf-8"><style>.h{background:#15803d;color:#fff;font-weight:bold;border:1px solid #000;}.c{border:1px solid #ddd;padding:5px;}</style></head><body><table><thead><tr><th class="h">HAVA ARACI</th><th class="h">PERSONEL</th>${data.questions.flatMap(q => q.sections.map(s => `<th class="h">${q.id}${s.label}</th>`)).join('')}<th class="h">TOPLAM</th></tr></thead><tbody>${AIRCRAFTS.map(air => data.responses.map(res => `<tr><td class="c">${air.label}</td><td class="c">${res.personnelName}</td>${data.questions.flatMap(q => q.sections.map(s => `<td class="c">${getRating(res, s.id, air.id_suffix) * s.sectionWeight}</td>`)).join('')}<td class="c">${calc(res, air.id_suffix)}</td></tr>`).join('')).join('')}</tbody></table></body></html>`;
-            const blob = new Blob(['\ufeff', h], { type: 'application/vnd.ms-excel' });
-            const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'Anket_Analiz.xls'; link.click();
+          const exportToExcel = () => {
+            let html = `<html><head><meta charset="utf-8"><style>.h{background:#15803d;color:#fff;font-weight:bold;border:1px solid #000;}.c{border:1px solid #ddd;}</style></head><body><table><thead><tr><th class="h">HAVA ARACI</th><th class="h">PERSONEL</th>${data.questions.flatMap(q => q.sections.map(s => `<th class="h">${q.id}${s.label}</th>`)).join('')}<th class="h">TOPLAM</th></tr></thead><tbody>${AIRCRAFTS.map(air => data.responses.map(res => `<tr><td class="c">${air.label}</td><td class="c">${res.personnelName}</td>${data.questions.flatMap(q => q.sections.map(s => `<td class="c">${getRating(res, s.id, air.id_suffix) * s.sectionWeight}</td>`)).join('')}<td class="c">${calculateScore(res, air.id_suffix)}</td></tr>`).join('')).join('')}</tbody></table></body></html>`;
+            const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel' });
+            const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'Rapor.xls'; link.click();
           };
 
           return (
-            <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border-2 border-gray-100 animate-fadeIn mt-10">
-              <div className="bg-gradient-to-r from-green-950 to-green-700 p-10 text-white flex justify-between items-center">
-                <div><h2 className="text-3xl font-black uppercase tracking-tighter">Sistem Yönetim Paneli</h2></div>
-                <button onClick={onLogout} className="bg-red-600 px-10 py-3 rounded-2xl text-sm font-black uppercase shadow-2xl hover:bg-red-700">Çıkış</button>
+            <div className="bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-gray-200 animate-fadeIn">
+              <div className="bg-gradient-to-r from-green-900 to-green-700 p-8 text-white flex justify-between items-center">
+                <div><h2 className="text-2xl font-black uppercase tracking-tighter">Sistem Yönetimi</h2></div>
+                <button onClick={onLogout} className="bg-red-600 px-6 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all shadow-xl hover:bg-red-700">Çıkış</button>
               </div>
-              <div className="flex bg-gray-50 border-b p-2 overflow-x-auto scrollbar-hide">
-                {[{id:'REPORTS',l:'RAPORLAR',i:'chart-bar'},{id:'PERSONNEL',l:'PERSONEL',i:'users'},{id:'QUESTIONS',l:'KATSAYILAR',i:'sliders-h'},{id:'SETTINGS',l:'METİN',i:'edit'}].map(t => (
-                  <button key={t.id} onClick={()=>setTab(t.id)} className={`flex-1 min-w-[150px] px-6 py-5 font-black text-xs transition-all rounded-[1.5rem] flex items-center justify-center space-x-3 ${tab === t.id ? 'bg-white shadow-md text-green-800' : 'text-gray-400'}`}><i className={`fas fa-${t.i}`}></i><span>{t.l}</span></button>
+              <div className="flex bg-gray-100 border-b p-1 overflow-x-auto scrollbar-hide">
+                {[{id:'REPORTS',l:'RAPOR'},{id:'PERSONNEL',l:'PERSONEL'},{id:'QUESTIONS',l:'KATSAYI'},{id:'SETTINGS',l:'METİN'}].map(t => (
+                  <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex-1 min-w-[120px] px-6 py-4 font-black text-xs transition-all rounded-xl ${activeTab === t.id ? 'bg-white shadow-sm text-green-800' : 'text-gray-400'}`}>{t.l}</button>
                 ))}
               </div>
-              <div className="p-10 min-h-[600px]">
-                {tab === 'REPORTS' && (
-                  <div className="space-y-10 animate-fadeIn">
-                    <div className="flex justify-between items-center border-l-8 border-green-600 pl-6"><h3 className="text-2xl font-black uppercase tracking-tighter">Birim Bazlı Analiz</h3><button onClick={exportExcel} className="bg-green-600 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase shadow-lg hover:bg-green-700">Excel Rapor</button></div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="p-8">
+                {activeTab === 'REPORTS' && (
+                  <div className="space-y-8">
+                    <div className="flex justify-between items-center"><h3 className="text-xl font-black uppercase">Birim Bazlı Analiz</h3><button onClick={exportToExcel} className="bg-green-600 text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg hover:bg-green-700">Excel İndir</button></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {AIRCRAFTS.map(air => {
-                        const s = data.responses.map(res => calc(res, air.id_suffix));
-                        const avg = s.length ? s.reduce((a,b)=>a+b,0)/s.length : 0;
-                        const pct = maxS > 0 ? ((avg/maxS)*100).toFixed(1) : "0.0";
+                        const scores = data.responses.map(res => calculateScore(res, air.id_suffix));
+                        const avg = scores.length > 0 ? scores.reduce((a,b)=>a+b,0) / scores.length : 0;
+                        const pct = globalMaxScore > 0 ? ((avg / globalMaxScore) * 100).toFixed(1) : "0.0";
                         return (
-                          <div key={air.id_suffix} className="bg-white p-8 rounded-[2.5rem] border-2 border-gray-100 shadow-xl">
-                            <div className="flex justify-between items-start mb-6"><div><div className="text-2xl font-black uppercase tracking-tighter">{air.label}</div><div className="text-[10px] text-gray-400 font-black mt-1">{data.responses.length} KATILIM</div></div><div className="bg-green-100 text-green-800 px-4 py-1 rounded-full font-black text-xl">%{pct}</div></div>
-                            <div className="h-4 bg-gray-100 rounded-full overflow-hidden border shadow-inner"><div className="h-full bg-green-500" style={{width:`${pct}%`}}></div></div>
-                            <div className="mt-4 text-center text-gray-400 font-bold text-xs uppercase">Ortalama: <span className="text-green-700 font-black text-lg">{Math.round(avg)}</span></div>
+                          <div key={air.id_suffix} className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                            <div className="flex justify-between items-start mb-4"><div><div className="text-lg font-black uppercase">{air.label}</div><div className="text-[10px] text-gray-400 font-black">{data.responses.length} KATILIM</div></div><div className="text-green-600 font-black text-xl">%{pct}</div></div>
+                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-green-500" style={{width:`${pct}%`}}></div></div>
                           </div>
                         );
                       })}
                     </div>
                   </div>
                 )}
-                {tab === 'PERSONNEL' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12 animate-fadeIn">
-                    <div className="space-y-6">
-                      <h3 className="font-black uppercase text-xl border-l-8 border-green-600 pl-4">Yeni Personel Listesi</h3>
-                      <textarea rows={10} value={pText} onChange={(e)=>setPText(e.target.value)} placeholder="Ahmet Yılmaz..." className="w-full p-6 border-2 border-gray-100 rounded-[2rem] font-bold text-lg outline-none focus:border-green-500 shadow-inner" />
-                      <button onClick={()=>{ const ns = pText.split('\n').map(n=>n.trim()).filter(n=>n!==''); if(ns.length) updateData({ personnel: Array.from(new Set([...data.personnel, ...ns])) }); setPText(''); alert("Liste güncellendi."); }} className="w-full bg-green-600 text-white py-5 rounded-[1.5rem] font-black uppercase text-xl shadow-2xl hover:bg-green-700 active:scale-95">Kaydet</button>
+                {activeTab === 'PERSONNEL' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div className="space-y-4">
+                      <h3 className="font-black uppercase text-lg">Personel Ekle</h3>
+                      <textarea rows={8} value={personnelBulkText} onChange={(e)=>setPersonnelBulkText(e.target.value)} placeholder="Her satıra bir isim..." className="w-full p-4 border-2 border-gray-100 rounded-2xl font-bold outline-none focus:border-green-500" />
+                      <button onClick={()=>{ const ns = personnelBulkText.split('\n').map(n=>n.trim()).filter(n=>n!==''); if(ns.length) updateData({ personnel: Array.from(new Set([...data.personnel, ...ns])) }); setPersonnelBulkText(''); }} className="w-full bg-green-600 text-white py-4 rounded-2xl font-black uppercase shadow-lg">Kaydet</button>
                     </div>
-                    <div className="bg-gray-50 p-8 rounded-[3rem] border-2 border-gray-100 max-h-[500px] overflow-y-auto">
-                      <h3 className="font-black uppercase mb-6 border-b pb-4 flex justify-between">Mevcut Liste <span>{data.personnel.length}</span></h3>
-                      <div className="space-y-2">{data.personnel.map(p=>(<div key={p} className="bg-white p-4 rounded-2xl border flex justify-between items-center text-sm font-black group"><span>{p}</span><button onClick={()=>updateData({ personnel: data.personnel.filter(x=>x!==p) })} className="text-red-300 opacity-0 group-hover:opacity-100 hover:text-red-600"><i className="fas fa-trash-alt"></i></button></div>))}</div>
+                    <div className="bg-gray-50 p-6 rounded-3xl border border-gray-200 overflow-y-auto max-h-[400px]">
+                      <h3 className="font-black uppercase mb-4 border-b pb-2">Mevcut Liste ({data.personnel.length})</h3>
+                      <div className="space-y-2">{data.personnel.map(p=>(<div key={p} className="bg-white p-3 rounded-xl border border-gray-100 flex justify-between text-xs font-black group"><span>{p}</span><button onClick={()=>updateData({ personnel: data.personnel.filter(x=>x!==p) })} className="text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"><i className="fas fa-trash"></i></button></div>))}</div>
                     </div>
                   </div>
                 )}
-                {tab === 'QUESTIONS' && (
-                  <div className="space-y-10 animate-fadeIn">
-                    <h3 className="text-2xl font-black uppercase tracking-tighter border-l-8 border-green-600 pl-4">Katsayı Konfigürasyonu</h3>
+                {activeTab === 'QUESTIONS' && (
+                  <div className="space-y-6">
                     {data.questions.map(q=>(
-                      <div key={q.id} className="border-2 border-gray-100 rounded-[2.5rem] overflow-hidden shadow-xl bg-white">
-                        <div className="bg-green-800 text-white p-6 font-black text-lg uppercase flex justify-between"><span>{q.id}. SORU AYARLARI</span><span className="bg-green-950 px-4 py-1 rounded-xl text-xs">Toplam: {q.sections.reduce((a,b)=>a+b.sectionWeight,0)}</span></div>
-                        <div className="p-10 grid grid-cols-2 md:grid-cols-4 gap-8">
+                      <div key={q.id} className="border-2 border-gray-50 rounded-3xl overflow-hidden shadow-sm">
+                        <div className="bg-green-800 text-white p-4 font-black text-sm uppercase">Soru {q.id} Katsayıları</div>
+                        <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                           {q.sections.map(s=>(
-                            <div key={s.id} className="bg-green-50 p-8 rounded-[2rem] border-2 border-green-100 text-center hover:scale-105 transition-transform">
-                              <div className="text-[10px] font-black text-green-700 opacity-50 uppercase mb-4">Bölüm {s.label}</div>
+                            <div key={s.id} className="bg-green-50 p-4 rounded-2xl border-2 border-green-100 text-center">
                               <input type="number" value={s.sectionWeight} onChange={(e)=>{
-                                const v = parseInt(e.target.value)||0;
-                                updateData({ questions: data.questions.map(cq => cq.id === q.id ? {...cq, sections: cq.sections.map(cs => cs.id === s.id ? {...cs, sectionWeight: v} : cs)} : cq) });
-                              }} className="w-full text-center text-4xl font-black text-green-800 bg-transparent outline-none" />
-                              <div className="text-[9px] text-gray-500 font-black uppercase mt-4 leading-tight">{s.title}</div>
+                                const val = parseInt(e.target.value)||0;
+                                updateData({ questions: data.questions.map(currQ => currQ.id === q.id ? {...currQ, sections: currQ.sections.map(currS => currS.id === s.id ? {...currS, sectionWeight: val} : currS)} : currQ) });
+                              }} className="w-full text-center text-2xl font-black text-green-800 bg-transparent outline-none" />
+                              <div className="text-[8px] text-gray-400 font-black uppercase mt-2">{s.title}</div>
                             </div>
                           ))}
                         </div>
@@ -295,10 +422,10 @@
                     ))}
                   </div>
                 )}
-                {tab === 'SETTINGS' && (
-                  <div className="space-y-8 animate-fadeIn">
-                    <h3 className="font-black uppercase text-2xl border-l-8 border-green-600 pl-4">Giriş Metni Düzenle</h3>
-                    <textarea rows={15} value={data.welcomeText} onChange={(e)=>updateData({ welcomeText: e.target.value })} className="w-full p-10 border-2 border-gray-100 rounded-[3rem] font-bold text-xl outline-none focus:border-green-500 shadow-inner text-gray-700" />
+                {activeTab === 'SETTINGS' && (
+                  <div className="space-y-4">
+                    <h3 className="font-black uppercase text-lg">Giriş Metni</h3>
+                    <textarea rows={12} value={data.welcomeText} onChange={(e)=>updateData({ welcomeText: e.target.value })} className="w-full p-6 border-2 border-gray-100 rounded-3xl font-bold outline-none focus:border-green-500 shadow-inner" />
                   </div>
                 )}
               </div>
@@ -306,83 +433,84 @@
           );
         };
 
+        const SurveyCompleted = () => (
+          <div className="bg-white p-12 rounded-[2.5rem] shadow-2xl border border-gray-100 text-center animate-fadeIn mt-10">
+            <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner"><i className="fas fa-check-circle text-5xl"></i></div>
+            <h2 className="text-3xl font-black text-gray-900 mb-4 uppercase tracking-tighter">Tamamlanmıştır</h2>
+            <p className="text-xl font-bold text-green-700 mb-8 uppercase">Sayfayı kapatabilirsiniz.</p>
+          </div>
+        );
+
+        // --- MAIN APP ---
+
         const App = () => {
           const [data, setData] = useState(() => {
-            const s = localStorage.getItem('survey_app_data');
-            return s ? JSON.parse(s) : { welcomeText: "Hoş geldiniz...", questions: INITIAL_QUESTIONS, personnel: [], responses: [] };
+            const saved = localStorage.getItem('survey_app_data');
+            return saved ? JSON.parse(saved) : INITIAL_DATA;
           });
           const [view, setView] = useState('WELCOME');
-          const [isAdmin, setIsAdmin] = useState(false);
-          const [loading, setLoading] = useState(true);
+          const [isAdminAuth, setIsAdminAuth] = useState(false);
+          const [isLoading, setIsLoading] = useState(true);
 
           useEffect(() => {
-            CloudService.fetchData().then(c => {
-              if (c) {
+            CloudService.fetchData().then(cloud => {
+              if (cloud) {
                 setData(prev => {
-                  const u = { ...prev };
-                  if (c.personnel) u.personnel = c.personnel;
-                  const wc = c.config?.find(x => x.Key === 'welcomeText');
-                  if (wc) u.welcomeText = wc.Value;
-                  if (c.responses) u.responses = c.responses.map(r => ({ id: r.ID, timestamp: r.Timestamp, personnelName: r.PersonnelName, totalScore: parseInt(r.TotalScore), scores: JSON.parse(r.ScoresJSON) }));
-                  if (c.weights) u.questions = prev.questions.map(q => ({ ...q, sections: q.sections.map(s => { const cw = c.weights.find(w => w.SectionID === s.id); return cw ? { ...s, sectionWeight: parseInt(cw.Weight) } : s; }) }));
-                  return u;
+                  const updated = { ...prev };
+                  if (cloud.personnel) updated.personnel = cloud.personnel;
+                  const wc = cloud.config?.find(c => c.Key === 'welcomeText');
+                  if (wc) updated.welcomeText = wc.Value;
+                  if (cloud.responses) updated.responses = cloud.responses.map(r => ({ id: r.ID, timestamp: r.Timestamp, personnelName: r.PersonnelName, totalScore: parseInt(r.TotalScore), scores: JSON.parse(r.ScoresJSON) }));
+                  if (cloud.weights) updated.questions = prev.questions.map(q => ({ ...q, sections: q.sections.map(s => { const cw = cloud.weights.find(w => w.SectionID === s.id); return cw ? { ...s, sectionWeight: parseInt(cw.Weight) } : s; }) }));
+                  return updated;
                 });
               }
-              setTimeout(() => setLoading(false), 2000);
+              setTimeout(() => setIsLoading(false), 2000);
             });
           }, []);
 
           useEffect(() => { localStorage.setItem('survey_app_data', JSON.stringify(data)); }, [data]);
 
-          const update = (newData) => {
+          const updateData = (newData) => {
             setData(prev => {
-              const u = { ...prev, ...newData };
+              const updated = { ...prev, ...newData };
               if (newData.personnel) CloudService.updatePersonnel(newData.personnel);
               if (newData.welcomeText) CloudService.updateConfig(newData.welcomeText);
               if (newData.questions) CloudService.updateWeights(newData.questions.flatMap(q => q.sections.map(s => ({ sectionId: s.id, weight: s.sectionWeight }))));
-              return u;
+              return updated;
             });
           };
 
-          if (loading) return (
+          if (isLoading) return (
             <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-[9999]">
-              <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGZ0d3Rma3JncDZ6c2lxYnF6OGcwMGpwaTJ2YzdmYXdnNTFheG9naCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/1rrxPs1nb3IjwmbiXw/giphy.gif" className="w-64 h-64 mb-10" />
-              <p className="text-green-700 font-black text-3xl tracking-[0.4em] uppercase animate-pulse">SENKRONİZE OLUYOR...</p>
+              <div className="w-64 h-64 bg-white rounded-full shadow-2xl flex items-center justify-center mb-8 border border-gray-50">
+                <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGZ0d3Rma3JncDZ6c2lxYnF6OGcwMGpwaTJ2YzdmYXdnNTFheG9naCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/1rrxPs1nb3IjwmbiXw/giphy.gif" className="w-48 h-48 object-contain" />
+              </div>
+              <p className="text-green-700 font-black text-2xl tracking-[0.2em] uppercase animate-pulse">Senkronize Ediliyor...</p>
             </div>
           );
 
           return (
-            <div className="min-h-screen pb-20">
-              <nav className="bg-green-700 text-white px-8 py-5 shadow-2xl flex justify-between items-center sticky top-0 z-50">
-                <h1 className="text-xl md:text-2xl font-black uppercase tracking-tighter cursor-pointer" onClick={()=>setView('WELCOME')}><i className="fas fa-helicopter mr-4"></i> BİRİM YOĞUNLUK PORTALİ</h1>
-                <button onClick={()=>isAdmin ? setView('ADMIN') : setView('LOGIN')} className="bg-green-900 px-6 py-2 rounded-xl font-black text-xs uppercase shadow-xl hover:bg-black transition-all">Yönetici Paneli</button>
+            <div className="min-h-screen bg-green-50 pb-10">
+              <nav className="bg-green-700 text-white p-4 shadow-xl flex justify-between items-center sticky top-0 z-50">
+                <h1 className="text-lg md:text-xl font-black flex items-center cursor-pointer uppercase tracking-tighter" onClick={() => setView('WELCOME')}>
+                  <i className="fas fa-poll-h mr-2"></i> Kurumsal Anket Portalı
+                </h1>
+                <button onClick={() => isAdminAuth ? setView('ADMIN') : setView('ADMIN_LOGIN')} className="bg-green-800 px-4 py-2 rounded-xl hover:bg-green-900 transition-all font-black text-xs uppercase shadow-lg">Admin Paneli</button>
               </nav>
-              <main className="container mx-auto px-6">
-                {view === 'WELCOME' && <WelcomeView text={data.welcomeText} onStart={()=>setView('SURVEY')} />}
-                {view === 'SURVEY' && <SurveyForm questions={data.questions} personnel={data.personnel} onSave={async r => { setData(p=>({...p, responses: [...p.responses, r]})); await CloudService.saveResponse(r); setView('DONE'); }} onCancel={()=>setView('WELCOME')} />}
-                {view === 'LOGIN' && (
-                  <div className="max-w-md mx-auto mt-32 bg-white p-12 rounded-[3rem] shadow-2xl text-center animate-fadeIn border-2">
-                    <i className="fas fa-lock text-green-600 text-5xl mb-8"></i>
-                    <h2 className="text-3xl font-black mb-10 uppercase tracking-tighter">GİRİŞ YAP</h2>
-                    <input type="password" placeholder="••••" className="w-full p-6 border-2 rounded-3xl text-center text-4xl tracking-[0.8em] focus:border-green-500 outline-none mb-6" onChange={(e)=>{if(e.target.value === ADMIN_PASSWORD){setIsAdmin(true); setView('ADMIN');}}} autoFocus />
-                    <button onClick={()=>setView('WELCOME')} className="text-gray-400 font-black uppercase text-xs">Geri Dön</button>
-                  </div>
-                )}
-                {view === 'ADMIN' && isAdmin && <AdminPanel data={data} updateData={update} onLogout={()=>{setIsAdmin(false); setView('WELCOME');}} />}
-                {view === 'DONE' && (
-                  <div className="bg-white p-20 rounded-[4rem] shadow-2xl text-center animate-fadeIn max-w-2xl mx-auto mt-20 border-b-[15px] border-green-600">
-                    <i className="fas fa-check-double text-green-600 text-7xl mb-10"></i>
-                    <h2 className="text-4xl font-black mb-6 uppercase tracking-tighter">ANKET TAMAMLANDI</h2>
-                    <p className="text-xl font-bold text-green-700 mb-10 uppercase">Katılımınız İçin Teşekkür Ederiz.</p>
-                    <button onClick={()=>setView('WELCOME')} className="bg-gray-100 px-12 py-4 rounded-2xl font-black text-gray-500 hover:bg-gray-200 transition-all uppercase">Başa Dön</button>
-                  </div>
-                )}
+              <main className="container mx-auto mt-8 px-4 max-w-4xl">
+                {view === 'WELCOME' && <WelcomeView text={data.welcomeText} onStart={() => setView('SURVEY')} />}
+                {view === 'SURVEY' && <SurveyForm questions={data.questions} personnel={data.personnel} onSave={async (r) => { setData(prev => ({...prev, responses: [...prev.responses, r]})); await CloudService.saveResponse(r); setView('COMPLETED'); }} onCancel={() => setView('WELCOME')} />}
+                {view === 'ADMIN_LOGIN' && <AdminLogin onLoginSuccess={() => { setIsAdminAuth(true); setView('ADMIN'); }} onCancel={() => setView('WELCOME')} />}
+                {view === 'ADMIN' && isAdminAuth && <AdminPanel data={data} updateData={updateData} onLogout={() => { setIsAdminAuth(false); setView('WELCOME'); }} />}
+                {view === 'COMPLETED' && <SurveyCompleted />}
               </main>
             </div>
           );
         };
 
-        createRoot(document.getElementById('root')).render(React.createElement(App));
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
     </script>
 </body>
 </html>
