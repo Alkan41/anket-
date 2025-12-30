@@ -1,0 +1,5 @@
+{
+  "name": "Professional Survey & Admin System",
+  "description": "A comprehensive survey application with coefficient-based scoring, dynamic question management, personnel tracking, and an admin panel with report exporting capabilities.",
+  "requestFramePermissions": []
+}
